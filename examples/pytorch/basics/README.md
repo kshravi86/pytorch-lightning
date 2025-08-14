@@ -19,6 +19,19 @@ python autoencoder.py --trainer.accelerator 'gpu' --trainer.devices 2 --trainer.
 
 ______________________________________________________________________
 
+### Cats and Dogs Classifier
+
+This script trains a small convolutional neural network on the cats and dogs
+subset of the CIFAR10 dataset and saves a model checkpoint. Use the companion
+inference script to make predictions on new images.
+
+```bash
+python cats_dogs_classifier.py --trainer.max_epochs 5
+python cats_dogs_inference.py path/to/image.png --checkpoint cats_dogs_classifier.ckpt
+```
+
+______________________________________________________________________
+
 ### Backbone Image Classifier
 
 This script shows you how to implement a `LightningModule` as a system.
