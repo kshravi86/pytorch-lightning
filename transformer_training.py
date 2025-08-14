@@ -120,6 +120,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a Transformer text classifier with Lightning")
     parser.add_argument("--batch-size", type=int, default=64, help="Batch size for training")
     parser.add_argument("--max-epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument(
+        "--save-path",
+        type=str,
+        default="transformer_model.ckpt",
+        help="File path to save the trained model checkpoint",
+    )
     args = parser.parse_args()
 
     dm = AGNewsDataModule(batch_size=args.batch_size)
@@ -128,3 +134,5 @@ if __name__ == "__main__":
     model = TransformerClassifier(vocab_size=dm.vocab_size, num_classes=dm.num_classes)
     trainer = L.Trainer(max_epochs=args.max_epochs)
     trainer.fit(model, dm)
+    trainer.save_checkpoint(args.save_path)
+    print(f"Model checkpoint saved to {args.save_path}")

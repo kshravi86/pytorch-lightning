@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--checkpoint-path",
         type=str,
-        default="lightning_logs/version_0/checkpoints/last.ckpt",
+        default="transformer_model.ckpt",
         help="Path to a trained model checkpoint",
     )
     parser.add_argument("--texts", nargs="+", help="One or more texts to classify")
