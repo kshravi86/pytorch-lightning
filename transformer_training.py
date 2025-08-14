@@ -1,13 +1,16 @@
 """Train a Transformer-based text classifier using PyTorch Lightning.
 
 This script trains a small Transformer encoder on the AG_NEWS dataset
-from TorchText. It serves as a minimal example of how to use Lightning
-for natural language processing with Transformer models.
+using the HuggingFace Datasets library. It serves as a minimal example
+of how to use Lightning for natural language processing with Transformer
+models.
 """
 
 import argparse
 import math
+import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 # Allow running this file without installing the package
@@ -17,9 +20,7 @@ import lightning.pytorch as L
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torchtext.datasets import AG_NEWS
-from torchtext.data.utils import get_tokenizer
-from torchtext.vocab import build_vocab_from_iterator
+from datasets import load_dataset
 
 
 class AGNewsDataModule(L.LightningDataModule):
@@ -29,27 +30,31 @@ class AGNewsDataModule(L.LightningDataModule):
         super().__init__()
         self.batch_size = batch_size
         self.max_vocab = max_vocab
-        self.tokenizer = get_tokenizer("basic_english")
+        self.tokenizer = lambda text: re.findall(r"\w+", text.lower())
 
     def prepare_data(self) -> None:  # type: ignore[override]
-        AG_NEWS(split="train")
-        AG_NEWS(split="test")
+        load_dataset("ag_news")
 
     def setup(self, stage: str | None = None) -> None:  # type: ignore[override]
-        train_iter = AG_NEWS(split="train")
-        self.vocab = build_vocab_from_iterator(
-            (self.tokenizer(text) for _, text in train_iter),
-            specials=["<unk>"],
-            max_tokens=self.max_vocab,
-        )
-        self.vocab.set_default_index(self.vocab["<unk>"])
+        dataset = load_dataset("ag_news")
+        train_ds = dataset["train"]
+        test_ds = dataset["test"]
+
+        counter = Counter()
+        for sample in train_ds:
+            counter.update(self.tokenizer(sample["text"]))
+
+        self.itos = ["<pad>", "<unk>"] + [tok for tok, _ in counter.most_common(self.max_vocab - 2)]
+        self.stoi = {tok: idx for idx, tok in enumerate(self.itos)}
         self.num_classes = 4
+        self.vocab_size = len(self.itos)
 
         def encode(text: str) -> torch.Tensor:
-            return torch.tensor(self.vocab(self.tokenizer(text)), dtype=torch.long)
+            unk_idx = self.stoi["<unk>"]
+            return torch.tensor([self.stoi.get(tok, unk_idx) for tok in self.tokenizer(text)], dtype=torch.long)
 
-        self.train_data = [(encode(text), label - 1) for label, text in AG_NEWS(split="train")]
-        self.val_data = [(encode(text), label - 1) for label, text in AG_NEWS(split="test")]
+        self.train_data = [(encode(item["text"]), item["label"]) for item in train_ds]
+        self.val_data = [(encode(item["text"]), item["label"]) for item in test_ds]
 
     def collate_fn(self, batch):
         labels = torch.tensor([label for _, label in batch], dtype=torch.long)
@@ -120,6 +125,6 @@ if __name__ == "__main__":
     dm = AGNewsDataModule(batch_size=args.batch_size)
     dm.prepare_data()
     dm.setup("fit")
-    model = TransformerClassifier(vocab_size=len(dm.vocab), num_classes=dm.num_classes)
+    model = TransformerClassifier(vocab_size=dm.vocab_size, num_classes=dm.num_classes)
     trainer = L.Trainer(max_epochs=args.max_epochs)
     trainer.fit(model, dm)

@@ -2,13 +2,14 @@ Training Transformer with PyTorch Lightning
 ==========================================
 
 This repository includes `transformer_training.py`, a minimal example that trains a
-Transformer encoder on the AG_NEWS text classification dataset.
+Transformer encoder on the AG_NEWS text classification dataset using the
+HuggingFace Datasets library.
 
 ## Installation
 
 1. Install the required packages:
    ```bash
-   pip install torch torchtext pytorch-lightning
+   pip install torch datasets pytorch-lightning
    ```
 
 ## Training
