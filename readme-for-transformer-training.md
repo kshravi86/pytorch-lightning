@@ -21,5 +21,11 @@ HuggingFace Datasets library.
    The script automatically downloads the AG_NEWS dataset and reports
    training and validation metrics.
 
+   The trained model checkpoint is saved to `transformer_model.ckpt` by default. Specify a custom path with `--save-path` if desired:
+   ```bash
+   python transformer_training.py --batch-size 64 --max-epochs 5 --save-path transformer_model.ckpt
+   ```
+   This checkpoint path can be used directly for inference.
+
 Adjust the command-line arguments to modify hyperparameters such as the
 batch size or number of epochs.
